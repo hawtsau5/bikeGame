@@ -22,6 +22,9 @@ start_timer = time.time()
 
 
 
+
+
+
 def calculate_elapse(channel):              # callback function
     global pulse, start_timer, elapse
     pulse+=1                                # increase pulse by 1 whenever interrupt occurred
@@ -41,6 +44,19 @@ def calculate_speed(r_cm):
 
 def init_interrupt():
     GPIO.add_event_detect(21, GPIO.FALLING, callback = calculate_elapse, bouncetime = 20)  
+
+def adaptive_difficulty(last_tick_speed, current_tick_speed):
+    speed_min_limit = 5
+    
+    if(last_tick_speed < current_tick_speed):
+        print('increase by 1')
+        return 1
+    elif (last_tick_speed > current_tick_speed and current_tick_speed > speed_min_limit):
+        print('decrease by 1')
+        return -1
+    else:
+        print('no change')
+        return 0    
 
 class CarRacing:
     def __init__(self):
@@ -63,6 +79,8 @@ class CarRacing:
         self.car_x_coordinate = (self.display_width * 0.45)
         self.car_y_coordinate = (self.display_height * 0.8)
         self.car_width = 49
+        self.previous_speed_kmph = 0
+        self.current_speed_kmph = 0
 
         # enemy_car
         self.enemy_car = pygame.image.load('./img/enemy_car_1.png')
@@ -114,9 +132,6 @@ class CarRacing:
                 right = False
                 device.emit(uinput.KEY_RIGHT, 0)
                 
-            calculate_speed(20) # call this function with wheel radius as parameter
-            print('rpm:{0:.0f}-RPM kmh:{1:.0f}-KMH dist_meas:{2:.2f}m pulse:{3}'.format(rpm,km_per_hour,dist_meas,pulse))
-            
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -133,7 +148,7 @@ class CarRacing:
                     print ("x: {x}, y: {y}".format(x=self.car_x_coordinate, y=self.car_y_coordinate))
 
             self.gameDisplay.fill(self.black)
-            self.back_ground_raod()
+            self.back_ground_road()
 
             self.run_enemy_car(self.enemy_car_startx, self.enemy_car_starty)
             self.enemy_car_starty += self.enemy_car_speed
@@ -145,9 +160,17 @@ class CarRacing:
             self.car(self.car_x_coordinate, self.car_y_coordinate)
             self.highscore(self.count)
             self.count += 1
+            
             if (self.count % 100 == 0):
-                self.enemy_car_speed += 1
-                self.bg_speed += 1
+                tick_speed = 0
+                self.current_speed_kmph = calculate_speed(10.5)
+                print('rpm:{0:.0f}-RPM kmh:{1:.0f}-KMH dist_meas:{2:.2f}m pulse:{3}'.format(rpm,km_per_hour,dist_meas,pulse))                
+                tick_speed = adaptive_difficulty(self.previous_speed_kmph, self.current_speed_kmph)
+                self.enemy_car_speed += tick_speed
+                self.bg_speed += tick_speed  
+                self.previous_speed_kmph = self.current_speed_kmph
+                
+                
 #brought to you by code-projects.org
             if self.car_y_coordinate < self.enemy_car_starty + self.enemy_car_height:
                 if self.car_x_coordinate > self.enemy_car_startx and self.car_x_coordinate < self.enemy_car_startx + self.enemy_car_width or self.car_x_coordinate + self.car_width > self.enemy_car_startx and self.car_x_coordinate + self.car_width < self.enemy_car_startx + self.enemy_car_width:
@@ -172,7 +195,7 @@ class CarRacing:
         car_racing.initialize()
         car_racing.racing_window()
 
-    def back_ground_raod(self):
+    def back_ground_road(self):
         self.gameDisplay.blit(self.bgImg, (self.bg_x1, self.bg_y1))
         self.gameDisplay.blit(self.bgImg, (self.bg_x2, self.bg_y2))
 
