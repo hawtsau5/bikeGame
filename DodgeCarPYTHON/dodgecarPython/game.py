@@ -168,6 +168,7 @@ class CarRacing:
                 tick_speed = 0
                 self.current_speed_kmph = calculate_speed(10.5)
                 print('rpm:{0:.0f}-RPM kmh:{1:.0f}-KMH dist_meas:{2:.2f}m pulse:{3}'.format(rpm,km_per_hour,dist_meas,pulse))                
+                print(self.current_speed_kmph)
                 tick_speed = adaptive_difficulty(self.previous_speed_kmph, self.current_speed_kmph)
                 self.enemy_car_speed += tick_speed
                 self.bg_speed += tick_speed  
