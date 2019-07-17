@@ -240,9 +240,14 @@ class CarRacing:
         self.gameDisplay.blit(self.enemy_car, (thingx, thingy))
 
     def highscore(self, count):
+        f_score=open("high_score.txt","r")
+        best_score=f_score.read()
+        f_score.close()
         font = pygame.font.SysFont("lucidaconsole", 20)
         text = font.render("Score : " + str(count), True, self.white)
+        text2 = font.render("High Score : " + best_score, True, self.white)
         self.gameDisplay.blit(text, (0, 0))
+        self.gameDisplay.blit(text2,(0, 20))
 
     def display_credit(self):
         font = pygame.font.SysFont("lucidaconsole", 14)
