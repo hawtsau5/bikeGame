@@ -23,10 +23,6 @@ pulse = 0
 start_timer = time.time()
 
 
-
-
-
-
 def calculate_elapse(channel):              # callback function
     global pulse, start_timer, elapse
     pulse+=1                                # increase pulse by 1 whenever interrupt occurred
@@ -35,13 +31,15 @@ def calculate_elapse(channel):              # callback function
 
 def calculate_speed(r_cm):
     global pulse,elapse,rpm,dist_km,dist_meas,km_per_sec,km_per_hour
-    if elapse !=0:                          # to avoid DivisionByZero error
+    if elapse !=0:
+        st_time = time.time()# to avoid DivisionByZero error
         rpm = 1/elapse * 60
         circ_cm = (2*math.pi)*r_cm          # calculate wheel circumference in CM
         dist_km = circ_cm/100000            # convert cm to km
         km_per_sec = dist_km / elapse       # calculate KM/sec
         km_per_hour = km_per_sec * 3600     # calculate KM/h
         dist_meas = (dist_km*pulse)*1000    # measure distance traverse in meter
+        print("--- %s ---" % (time.time() - st_time))
         return km_per_hour
 
 def init_interrupt():
@@ -60,6 +58,20 @@ def adaptive_difficulty(last_tick_speed, current_tick_speed):
         print('no change')
         return 0
     
+def save_best_score(your_score):
+    your_score = your_score-1
+    f_score=open("high_score.txt","r")
+    best_score=f_score.read()
+    best_score_int=int(best_score)
+    f_score.close()
+    print(your_score, best_score_int)
+    if your_score > best_score_int:
+       f_score=open("high_score.txt","w")        
+       f_score.write(str(your_score))
+       f_score.close()
+       return True
+    else:
+        return False
 
 class CarRacing:
     def __init__(self):
@@ -78,7 +90,7 @@ class CarRacing:
 
         self.crashed = False
 
-        self.carImg = pygame.image.load("./img/car.png")
+        self.carImg = pygame.image.load("./img/bike.png")
         self.car_x_coordinate = (self.display_width * 0.45)
         self.car_y_coordinate = (self.display_height * 0.8)
         self.car_width = 49
@@ -166,9 +178,8 @@ class CarRacing:
             
             if (self.count % 100 == 0):
                 tick_speed = 0
-                self.current_speed_kmph = calculate_speed(10.5)
+                self.current_speed_kmph = calculate_speed(30.02)
                 print('rpm:{0:.0f}-RPM kmh:{1:.0f}-KMH dist_meas:{2:.2f}m pulse:{3}'.format(rpm,km_per_hour,dist_meas,pulse))                
-                print(self.current_speed_kmph)
                 tick_speed = adaptive_difficulty(self.previous_speed_kmph, self.current_speed_kmph)
                 self.enemy_car_speed += tick_speed
                 self.bg_speed += tick_speed  
@@ -176,14 +187,27 @@ class CarRacing:
                 
                 
 #brought to you by code-projects.org
-            #if self.car_y_coordinate < self.enemy_car_starty + self.enemy_car_height:
-                #if self.car_x_coordinate > self.enemy_car_startx and self.car_x_coordinate < self.enemy_car_startx + self.enemy_car_width or self.car_x_coordinate + self.car_width > self.enemy_car_startx and self.car_x_coordinate + self.car_width < self.enemy_car_startx + self.enemy_car_width:
-                    #self.crashed = True
-                    #self.display_message("Game Over !!!")
+            if self.car_y_coordinate < self.enemy_car_starty + self.enemy_car_height:
+                if self.car_x_coordinate > self.enemy_car_startx and self.car_x_coordinate < self.enemy_car_startx + self.enemy_car_width or self.car_x_coordinate + self.car_width > self.enemy_car_startx and self.car_x_coordinate + self.car_width < self.enemy_car_startx + self.enemy_car_width:
+                    high_score_check = save_best_score(self.count)
+                    self.crashed = True
+                    if high_score_check == True:
+                        self.display_message("NEW HIGH SCORE!!!")
+                    else:    
+                        self.display_message("GAME OVER!!")
+                    
+                    
+                    
 
-            #if self.car_x_coordinate < 310 or self.car_x_coordinate > 460:
-                #self.crashed = True
-                #self.display_message("Game Over !!!")
+            if self.car_x_coordinate < 290 or self.car_x_coordinate > 470:
+                high_score_check = save_best_score(self.count)
+                self.crashed = True
+                if high_score_check == True:
+                        self.display_message("NEW HIGH SCORE!!!")
+                else:    
+                    self.display_message("GAME OVER!!")
+                
+                
 
             pygame.display.update()
             self.clock.tick(60)
